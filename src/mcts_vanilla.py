@@ -6,6 +6,7 @@ from math import sqrt, log
 num_nodes = 1000
 explore_faction = 2.
 
+
 def traverse_nodes(node, state, identity):
     """ Traverses the tree until the end criterion are met.
 
@@ -65,17 +66,33 @@ def think(state):
     Returns:    The action to be taken.
 
     """
+
     identity_of_bot = state.player_turn
-    root_node = MCTSNode(parent=None, parent_action=None, action_list=state.legal_moves)
+    root_node = MCTSNode(parent=None, parent_action=None,
+                         action_list=state.legal_moves)
+    # legal_moves
 
     for step in range(num_nodes):
         # Copy the game for sampling a playthrough
         sampled_game = state.copy()
 
-        # Start at root
+        # Start at root (R)
         node = root_node
 
         # Do MCTS - This is all you!
+        # 1. Selection
+        # Select most urgent child at each step with UCB
+        # UCB = xj + C * sqrt( (2 * ln (n)) / nj)
+        # xj = estimated reward of choice j
+
+        # n = number of times parent has been tried
+        # nj = number of times choice j has been tried
+        # Apply chosen actions
+        # Stop at tree boundary
+
+        # 2. Expansion
+        # 3. Simulation
+        # 4. Backpropagation
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
