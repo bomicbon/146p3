@@ -7,11 +7,20 @@ num_nodes = 1000
 explore_faction = 2.
 
 # calculate the urgent
-def UCB1(X,n,nj, C):
-    return X + C * sqrt((2 * log(n))/nj)
 
-# deternime if the current bot win or not
-def winner(state,identity):
+
+def UCB1(winRate, parentVisited, childVisited):
+    X = winRate
+    n = parentVisited
+    nj = childVisited
+    C = explore_faction
+    UCB = X + C * sqrt((2 * log(n)) / nj)
+    return UCB
+
+# determine if the current bot win or not
+
+
+def winner(state, identity):
     win_s = 0
     if state.winner == identity:
         win_s = 1
@@ -21,10 +30,11 @@ def winner(state,identity):
         win_s = -1
     return win_s
 
+
 def best(node):
     win_rate = 0
     for child in node.child_nodes:
-        temp_win_rate = child.wins/child.visits
+        temp_win_rate = child.wins / child.visits
         if temp_win_rate > win_rate:
             win_rate = temp_win_rate
             node = child
@@ -43,13 +53,32 @@ def traverse_nodes(node, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
+    current_node = node
+    urgency_list = []
+    urgency = 0
+    UCB_dict = {}
+    while current_node.untried_actions != [] and state.is_terminal == False:
+        for child in current_node.child_nodes:
+            WRate = child.wins / child.visited  # Win Rate = wins / visited
+            if identity != state.player_turn:
+                WRate = 1 - WRate  # If not player turn -> WRate is loss Rate
+            urgency = UCB1(WRate, child.parent.visited, child.visited)
+            urgency_list.append(urgency)
+            UCB_dict[urgency] = child
 
+    # Traverse done, now return most urgent child
+    max_UCB = max(urgency_list)  # max UCB value from list
+    most_urgent_child = UCB_dict[max_UCB]  # Lookup child node by UCB1
+    return most_urgent_child
+
+    '''
     current_node = node
     urgent = 0
 
     while not current_node.untried_actions: # while there isn't untried action
         for child in current_node.child_nodes:
-            temp_urgent = UCB1(child.wins, child.parent.visited, child.visited, explore_faction)
+            temp_urgent = UCB1(child.wins, child.parent.visited,
+                               child.visited, explore_faction)
             if temp_urgent > urgent:
                 urgent = temp_urgent
                 current_node = child
@@ -58,6 +87,7 @@ def traverse_nodes(node, state, identity):
     return current_node
     # pass
     # Hint: return leaf_node
+'''
 
 
 def expand_leaf(node, state):
@@ -71,8 +101,9 @@ def expand_leaf(node, state):
 
     """
     rand_action = choice(node.untried_actions)
-    new_node = MCTSNode(parent=node, parent_action=rand_action, action_list=state.legal_moves)
-    node.child_nodes[rand_action]= new_node
+    new_node = MCTSNode(parent=node, parent_action=rand_action,
+                        action_list=state.legal_moves)
+    node.child_nodes[rand_action] = new_node
     node.untried_actions.remove(rand_action)
     state.apply_move(rand_action)
     return new_node
@@ -89,7 +120,7 @@ def rollout(state):
     """
     while not state.is_terminal():
         state.apply_move(choice(state.legal_moves))
-    #pass
+    # pass
 
 
 def backpropagate(node, won):
@@ -104,7 +135,7 @@ def backpropagate(node, won):
         node.visits += 1
         node.wins += won
         node = node.parent
-    #pass
+    # pass
 
 
 def think(state):
@@ -117,7 +148,8 @@ def think(state):
 
     """
     identity_of_bot = state.player_turn
-    root_node = MCTSNode(parent=None, parent_action=None, action_list=state.legal_moves)
+    root_node = MCTSNode(parent=None, parent_action=None,
+                         action_list=state.legal_moves)
 
     for step in range(num_nodes):
 
@@ -129,11 +161,12 @@ def think(state):
 
         # Do MCTS - This is all you!
 
-        node = expand_leaf(traverse_nodes(node, sampled_game, identity_of_bot), state)
+        node = expand_leaf(traverse_nodes(
+            node, sampled_game, identity_of_bot), state)
         rollout(sampled_game)
         backpropagate(node, winner(sampled_game, identity_of_bot))
 
     return best(root_node)
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    #return None
+    # return None
