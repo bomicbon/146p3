@@ -6,22 +6,14 @@ from math import sqrt, log
 num_nodes = 1000
 explore_faction = 2.
 
+
 # calculate the urgent
+def UCB1(X,n,nj, C):
+    return X + C * sqrt((2 * log(n))/nj)
 
 
-def UCB1(winRate, parentVisited, childVisited):
-    X = winRate
-    n = parentVisited
-    nj = childVisited
-    C = explore_faction
-    UCB = X + C * sqrt((2 * log(n)) / nj)
-    return UCB
-
-# determine if the current bot win or not
-
-
-def winner(state, identity):
-    win_s = 0
+# deternime if the current bot win or not
+def winner(state,identity):
     if state.winner == identity:
         win_s = 1
     elif state.winner == 'tie':
@@ -31,15 +23,23 @@ def winner(state, identity):
     return win_s
 
 
-def best(node):
-    win_rate = 0
-    for child in node.child_nodes:
-        temp_win_rate = child.wins / child.visits
-        if temp_win_rate > win_rate:
-            win_rate = temp_win_rate
-            node = child
-        # current_node = choice(current_node.child_nodes)
-    return node.parent_action
+def best_action(node):
+    values = {}
+    for __, child in node.child_nodes.items():
+        values[child] = child.wins/child.visits
+    best_win = max(values, key=values.get)
+    return best_win.parent_action
+
+
+def best_child(node,state,identity):
+    values = {}
+    for __, child in node.child_nodes.items():
+        win_rate = child.wins / child.visits  # Win Rate = wins / visited
+        if identity != state.player_turn:
+            win_rate = 1 - win_rate  # If not player turn -> win_rate is loss Rate
+        values[child] = UCB1(win_rate, child.parent.visits, child.visits, explore_faction)
+    best_choice = max(values, key=values.get)
+    return best_choice
 
 
 def traverse_nodes(node, state, identity):
@@ -53,41 +53,14 @@ def traverse_nodes(node, state, identity):
     Returns:        A node from which the next stage of the search can proceed.
 
     """
+
     current_node = node
-    urgency_list = []
-    urgency = 0
-    UCB_dict = {}
-    while current_node.untried_actions != [] and state.is_terminal == False:
-        for child in current_node.child_nodes:
-            WRate = child.wins / child.visited  # Win Rate = wins / visited
-            if identity != state.player_turn:
-                WRate = 1 - WRate  # If not player turn -> WRate is loss Rate
-            urgency = UCB1(WRate, child.parent.visited, child.visited)
-            urgency_list.append(urgency)
-            UCB_dict[urgency] = child
-
-    # Traverse done, now return most urgent child
-    max_UCB = max(urgency_list)  # max UCB value from list
-    most_urgent_child = UCB_dict[max_UCB]  # Lookup child node by UCB1
-    return most_urgent_child
-
-    '''
-    current_node = node
-    urgent = 0
-
-    while not current_node.untried_actions: # while there isn't untried action
-        for child in current_node.child_nodes:
-            temp_urgent = UCB1(child.wins, child.parent.visited,
-                               child.visited, explore_faction)
-            if temp_urgent > urgent:
-                urgent = temp_urgent
-                current_node = child
-        # current_node = choice(current_node.child_nodes)
-        state.apply_move(node.parent_move)
+    while current_node.untried_actions == [] and state.is_terminal() is False:  # while there isn't untried action
+        current_node = best_child(current_node, state, identity)
+        state.apply_move(current_node.parent_action)
     return current_node
     # pass
     # Hint: return leaf_node
-'''
 
 
 def expand_leaf(node, state):
@@ -100,12 +73,13 @@ def expand_leaf(node, state):
     Returns:    The added child node.
 
     """
+    if state.is_terminal():
+        return node
     rand_action = choice(node.untried_actions)
-    new_node = MCTSNode(parent=node, parent_action=rand_action,
-                        action_list=state.legal_moves)
-    node.child_nodes[rand_action] = new_node
     node.untried_actions.remove(rand_action)
     state.apply_move(rand_action)
+    new_node = MCTSNode(parent=node, parent_action=rand_action, action_list=state.legal_moves)
+    node.child_nodes[rand_action]= new_node
     return new_node
     # pass
     # Hint: return new_node
@@ -120,7 +94,7 @@ def rollout(state):
     """
     while not state.is_terminal():
         state.apply_move(choice(state.legal_moves))
-    # pass
+    #pass
 
 
 def backpropagate(node, won):
@@ -135,8 +109,7 @@ def backpropagate(node, won):
         node.visits += 1
         node.wins += won
         node = node.parent
-    # pass
-
+    #pass
 
 def think(state):
     """ Performs MCTS by sampling games and calling the appropriate functions to construct the game tree.
@@ -148,11 +121,8 @@ def think(state):
 
     """
     identity_of_bot = state.player_turn
-    root_node = MCTSNode(parent=None, parent_action=None,
-                         action_list=state.legal_moves)
-
+    root_node = MCTSNode(parent=None, parent_action=None, action_list=state.legal_moves)
     for step in range(num_nodes):
-
         # Copy the game for sampling a playthrough
         sampled_game = state.copy()
 
@@ -160,13 +130,15 @@ def think(state):
         node = root_node
 
         # Do MCTS - This is all you!
-
-        node = expand_leaf(traverse_nodes(
-            node, sampled_game, identity_of_bot), state)
+        # selection
+        node = traverse_nodes(node, sampled_game, identity_of_bot)
+        # expansion
+        node = expand_leaf(node, sampled_game)
+        # simulation
         rollout(sampled_game)
+        # backpropagation
         backpropagate(node, winner(sampled_game, identity_of_bot))
-
-    return best(root_node)
+    return best_action(root_node)
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    # return None
+    #return None
