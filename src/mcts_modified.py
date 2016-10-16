@@ -89,7 +89,68 @@ def rollout(state):
         state:  The state of the game.
 
     """
-    pass
+    '''
+    while not state.is_terminal():
+        best_move = []
+        for move in state.legal_moves:
+            rollout_state = state.copy()
+            me = rollout_state.player_turn
+            red_score = rollout_state.score.get('red', 0)
+            blue_score = rollout_state.score.get('blue', 0)
+            while not rollout_state.is_terminal():
+                rollout_state.apply_move(choice(rollout_state.legal_moves))
+                if me == 'red':
+                    if rollout_state.score.get('red', 0) > red_score:
+                        best_move.append(move)
+                        break
+                    elif rollout_state.score.get('blue', 0) > blue_score:
+                        break
+                else:
+                    if rollout_state.score.get('blue', 0) > blue_score:
+                        best_move.append(move)
+                        break
+                    elif rollout_state.score.get('red', 0) > red_score:
+                        break
+        if best_move == []:
+            best_choice = choice(state.legal_moves)
+        else:
+            best_choice = choice(best_move)
+        state.apply_move(best_choice)
+    '''
+
+
+
+
+
+    ROLLOUTS = 10
+    MAX_DEPTH = 5
+    while not state.is_terminal():
+        values = {}
+        for move in state.legal_moves:
+            total_score = 0.0
+
+            # Sample a set number of games where the target move is immediately applied.
+            for r in range(ROLLOUTS):
+                rollout_state = state.copy()
+                rollout_state.apply_move(move)
+
+                for i in range(MAX_DEPTH):
+                    if rollout_state.is_terminal():
+                        break
+                    rollout_move = choice(rollout_state.legal_moves)
+                    rollout_state.apply_move(rollout_move)
+
+                total_score += rollout_state.score.get('red', 0) - rollout_state.score.get('blue', 0) if rollout_state.player_turn == 'red' \
+                    else rollout_state.score.get('blue', 0) - rollout_state.score.get('red', 0)
+
+            expectation = float(total_score) / ROLLOUTS
+
+            # If the current move has a better average score, replace best_move and best_expectation
+            values[expectation] = move
+
+        best_move = values[max(values.keys())]
+        state.apply_move(best_move)
+
 
 
 def backpropagate(node, won):
@@ -126,6 +187,16 @@ def think(state):
         node = root_node
 
         # Do MCTS - This is all you!
+
+        # selection
+        node = traverse_nodes(node, sampled_game, identity_of_bot)
+        # expansion
+        node = expand_leaf(node, sampled_game)
+        # simulation
+        rollout(sampled_game)
+        # backpropagation
+        backpropagate(node, winner(sampled_game, identity_of_bot))
+    return best_action(root_node)
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
