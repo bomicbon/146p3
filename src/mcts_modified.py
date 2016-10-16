@@ -3,7 +3,7 @@ from mcts_node import MCTSNode
 from random import choice
 from math import sqrt, log
 
-num_nodes = 1000
+num_nodes = 100
 explore_faction = 2.
 
 # calculate the urgent
@@ -39,6 +39,10 @@ def best_child(node,state,identity):
         values[child] = UCB1(win_rate, child.parent.visits, child.visits, explore_faction)
     best_choice = max(values, key=values.get)
     return best_choice
+
+
+def opponent(role):
+    return 'red' if role == 'blue' else 'blue'
 
 
 def traverse_nodes(node, state, identity):
@@ -122,8 +126,8 @@ def rollout(state):
 
 
 
-    ROLLOUTS = 10
-    MAX_DEPTH = 5
+    ROLLOUTS = 5
+    MAX_DEPTH = 10
     while not state.is_terminal():
         values = {}
         for move in state.legal_moves:
@@ -132,6 +136,7 @@ def rollout(state):
             # Sample a set number of games where the target move is immediately applied.
             for r in range(ROLLOUTS):
                 rollout_state = state.copy()
+                me = rollout_state.player_turn
                 rollout_state.apply_move(move)
 
                 for i in range(MAX_DEPTH):
@@ -139,12 +144,9 @@ def rollout(state):
                         break
                     rollout_move = choice(rollout_state.legal_moves)
                     rollout_state.apply_move(rollout_move)
-
-                total_score += rollout_state.score.get('red', 0) - rollout_state.score.get('blue', 0) if rollout_state.player_turn == 'red' \
-                    else rollout_state.score.get('blue', 0) - rollout_state.score.get('red', 0)
+                total_score += rollout_state.score.get(me, 0) - rollout_state.score.get(opponent(me), 0)
 
             expectation = float(total_score) / ROLLOUTS
-
             # If the current move has a better average score, replace best_move and best_expectation
             values[expectation] = move
 
