@@ -4,7 +4,7 @@ from random import choice
 from math import sqrt, log
 
 num_nodes = 100
-explore_faction = 2.
+explore_faction = 2
 
 # calculate the urgent
 def UCB1(X,n,nj, C):
@@ -43,6 +43,19 @@ def best_child(node,state,identity):
 
 def opponent(role):
     return 'red' if role == 'blue' else 'blue'
+
+
+def construct_act(action, a, b, opp):
+
+    line = action[0]
+    if opp:
+        if action[0] == 'v':
+            line = 'h'
+        else:
+            line = 'v'
+    return line, (action[1][0] + a, action[1][1]+ b)
+
+
 
 
 def traverse_nodes(node, state, identity):
@@ -94,42 +107,34 @@ def rollout(state):
 
     """
     '''
+    input()
     while not state.is_terminal():
-        best_move = []
-        for move in state.legal_moves:
-            rollout_state = state.copy()
-            me = rollout_state.player_turn
-            red_score = rollout_state.score.get('red', 0)
-            blue_score = rollout_state.score.get('blue', 0)
-            while not rollout_state.is_terminal():
-                rollout_state.apply_move(choice(rollout_state.legal_moves))
-                if me == 'red':
-                    if rollout_state.score.get('red', 0) > red_score:
-                        best_move.append(move)
-                        break
-                    elif rollout_state.score.get('blue', 0) > blue_score:
-                        break
-                else:
-                    if rollout_state.score.get('blue', 0) > blue_score:
-                        best_move.append(move)
-                        break
-                    elif rollout_state.score.get('red', 0) > red_score:
-                        break
-        if best_move == []:
-            best_choice = choice(state.legal_moves)
-        else:
-            best_choice = choice(best_move)
-        state.apply_move(best_choice)
+        points = 0
+        rand_action = choice(state.legal_moves)
+        # up and left
+        if rand_action[0] == 'h' and (rand_action[1][1] == 0 or rand_action[1][1] == 3):
+            construct_act(rand_action, 0, -1, False)
+            construct_act(rand_action, 0, -1, True)
+            construct_act(rand_action, 1, -1, True)
+        # down and right
+        if rand_action[0] == 'v' and (rand_action[1][0] == 0 or rand_action[1][0] == 3)
+            construct_act(rand_action, 0, 1, False)
+            construct_act(rand_action, 0, 0, True)
+            construct_act(rand_action, 1, 0, True)
+        for i in range(-1, 2,2):
+            for j in range(-1,2,2):
+                print()
+        state.apply_move(choice(state.legal_moves))
     '''
 
 
 
-
-
-    ROLLOUTS = 5
+    ROLLOUTS = 3
     MAX_DEPTH = 10
+    max_score = 10 # more than highest posibble score in a game
     while not state.is_terminal():
         values = {}
+
         for move in state.legal_moves:
             total_score = 0.0
 
@@ -137,13 +142,19 @@ def rollout(state):
             for r in range(ROLLOUTS):
                 rollout_state = state.copy()
                 me = rollout_state.player_turn
+                old_score = rollout_state.score.get(me, 0) # get old score
                 rollout_state.apply_move(move)
+                new_score = rollout_state.score.get(me, 0) # get new score
+                if new_score > old_score: # if score new box
+                    total_score = max_score * ROLLOUTS # mark it as best move
+                    break
 
                 for i in range(MAX_DEPTH):
                     if rollout_state.is_terminal():
                         break
                     rollout_move = choice(rollout_state.legal_moves)
                     rollout_state.apply_move(rollout_move)
+
                 total_score += rollout_state.score.get(me, 0) - rollout_state.score.get(opponent(me), 0)
 
             expectation = float(total_score) / ROLLOUTS
@@ -152,6 +163,8 @@ def rollout(state):
 
         best_move = values[max(values.keys())]
         state.apply_move(best_move)
+
+
 
 
 
