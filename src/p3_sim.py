@@ -1,9 +1,18 @@
 from p3_game import create_game, State
 from timeit import default_timer as time
+import matplotlib.pyplot as plt
+import numpy as np
 
 #import random_bot as red_bot
-import rollout_bot as red_bot  # Experiment 1
-import rollout_bot as blue_bot
+#import rollout_bot as blue_bot
+
+# Experiment 1 : Tree Size
+#import mcts_vanilla as red_bot
+#import mcts_vanilla as blue_bot
+
+# Experiment 2 : Modified vs. Vanilla
+import mcts_modified as red_bot
+import mcts_vanilla as blue_bot
 
 BOTS = {'red': red_bot, 'blue': blue_bot}
 
@@ -22,10 +31,13 @@ Blue fixed at 100 nodes/tree.
 Test at least 4 sizes for Red tree for at least 100 games.
 Plot number of wins of each tree size.
 '''
-rounds_E1 = 126  # 125 games
+'''
+rounds_E1 = 101  # 125 games
 E1_times = []
 E1_scores_by_size = []
 round_counter = 0
+red_plot_list = []
+blue_plot_list = []
 for n in range(1, 6):  # Test at least 4 sizes for Red Tree
     start = time()  # To log how much time the simulation takes.
     if hasattr(red_bot, 'num_nodes'):
@@ -48,6 +60,9 @@ for n in range(1, 6):  # Test at least 4 sizes for Red Tree
         print ("The %s bot wins this round (%s)" % (winner, str(final_score)))
         wins[winner] = wins.get(winner, 0) + 1
 
+    red_plot_list.append(wins['red'])
+    blue_plot_list.append(wins['blue'])
+
     print("")
     print("Final win counts:", dict(wins))
     for color, score in wins.items():
@@ -60,8 +75,13 @@ for n in range(1, 6):  # Test at least 4 sizes for Red Tree
     print(end - start, ' total seconds')
     print("")
 
+plot_list = [1, 2, 3, 4, 5]
+plot_list = np.asarray(plot_list)
+red_plot_list = np.asarray(red_plot_list)
+blue_plot_list = np.asarray(blue_plot_list)
+
 print("RESULTS")
-for i in range(1, 6):
+for i in range(1, 2):
     j = i + 1
     a = i - 1
     a = a * 2
@@ -73,7 +93,12 @@ for i in range(1, 6):
     print("")
 print("Total number of rounds: %d" % round_counter)
 
+plt.plot(plot_list, red_plot_list, 'ro', plot_list, blue_plot_list, 'bs')
+maxplot = (max(red_plot_list), max(blue_plot_list))
+#plt.axis(0, 6, 0, maxplot + 30)
+plt.show()
 '''
+
 start = time()  # To log how much time the simulation takes.
 for i in range(rounds):
 
@@ -99,4 +124,3 @@ print("Final win counts:", dict(wins))
 # Also output the time elapsed.
 end = time()
 print(end - start, ' seconds')
-'''

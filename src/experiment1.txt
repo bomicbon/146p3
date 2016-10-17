@@ -1,0 +1,15 @@
+Analysis of Experiment 1 - Tree Sizes
+
+         We tested each tree size for 100 rounds.
+         Tree sizes were tested as follows: (200 (nodes), 300, 400, 500, 600)
+         Generally, the more nodes a tree has, the higher chance it has of winning.
+         When a tree has more nodes, it has explored more possibilities.
+         Therefore, it can find better paths to reach better end results.
+         Based on our graph, the largest difference between the wins and losses
+         occured at round 3 - when red had 400 nodes.
+         After this point, when red was tested with more nodes, it seems that
+         the benefits begin to diminish.
+         We see the result of this diminishing at round 5, where the win/loss
+         difference is not as striking.
+         
+

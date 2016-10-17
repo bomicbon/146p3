@@ -1,0 +1,15 @@
+Analysis of Experiment 2 - Heuristic Improvement
+
+         1. Does the modified version win more games?
+            The modified version does indeed win more games.   
+         2. Does this change if you increase / decrease the size of the tree?
+            This does change if we increase / decrease the size of the tree.
+            Increasing the size of the tree namely increases its opportunity
+            of finding better paths to a point. Decreasing the size of the
+            tree decreases its chance of winning. After a certain number
+            of increases however, the improvements do begin to diminish.
+
+            1000 nodes takes a long time to run even 1 round,
+            but based on the results we're getting, it seems that
+            the modified heuristic is beating the vanilla version.
+            
